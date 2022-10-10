@@ -1,0 +1,11 @@
+What this app should do?
+
+ver 1.0 
+- Only flights to Barcelona
+- Only between 02.02 and 07.02, 
+- Arrival no later than 03.02, flight back no sooner than 06.02
+- prices with no changes and with one change
+
+- Determining each possible combination of dates
+- web scraping to get prices, airlines, airport to change
+- saving as json in append mode: dates, airlines, price, airport to change
