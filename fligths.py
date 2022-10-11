@@ -1,5 +1,7 @@
 import re
 import datetime
+import json
+
 from time import sleep
 
 from selenium import webdriver
@@ -88,60 +90,70 @@ if __name__ == "__main__":
     all_results = driver.find_elements(By.CLASS_NAME, 'JMc5Xc')
     print("Number of results: ", len(all_results))
 
-    list_of_dicts = []
+    filename = "flights_data.json"
 
-    for elem in all_results:
-        text = elem.get_attribute('aria-label')
+    with open(filename, 'r') as f:
 
-        price = re.findall(r"From \d+", text)[0].split(' ')[1]
-
-        nonstop = re.findall(r"\bNon", text)
-        if len(nonstop) > 0:
-            stops = 0
-            stop_time = None
-            stop_city = None
-        else:
-            stops = re.findall(r"\d+ stop", text)[0].split(' ')[0]
-            stop_data = re.findall(r'((\d+ hr)? (\d+ min)?)+ (overnight )?layover at (\S+)', text)
-            stop_time = stop_data[0][0].strip()
-            stop_city = stop_data[0][4].strip()
-
-        airline = ' '.join(re.findall(r"((with \S+) (\S+\.)?)", text)[0][0].split(' ')[1:])
-        airline = airline.rstrip()[:-1] # removing dot
-
-        times = re.findall(r"\d+:\d+ [APM]+", text)
-        dep_time = times[0]
-        arr_time = times[1]
-
-        dates = re.findall(r"\S+, \S+ \d", text)
-        dep_date = dates[0] + " 2023"
-        arr_date = dates[1] + " 2023"
-
-        duration = (re.findall(r"((duration \d+ hr\.?)+ (\d+ min)?)", text)[0][0])
-        duration = ' '.join(duration.split(' ')[1:]).rstrip()
-        if duration[-1] == '.':
-            duration = duration[:-1]       
+        file_dict = json.load(f)
         
-        today = format_date(datetime.date.today())
-        
-        elem_dict = {
-            "date_readed": today,
-            "departure_date": dep_date,
-            "arrival_date": arr_date,
-            "return_date": format_date(RETURN_EARLIEST),
-            "price": int(price),
-            "airline": airline,
-            "duration": duration,
-            "stops": {
-                "stops_num": stops,
-                "place": stop_city,
-                "stop_duration": stop_time,
+
+        for elem in all_results:
+            text = elem.get_attribute('aria-label')
+
+            price = re.findall(r"From \d+", text)[0].split(' ')[1]
+
+            nonstop = re.findall(r"\bNon", text)
+            if len(nonstop) > 0:
+                stops = 0
+                stop_time = None
+                stop_city = None
+            else:
+                stops = re.findall(r"\d+ stop", text)[0].split(' ')[0]
+                stop_data = re.findall(r'((\d+ hr)? (\d+ min)?)+ (overnight )?layover at (\S+)', text)
+                stop_time = stop_data[0][0].strip()
+                stop_city = stop_data[0][4].strip()
+
+            airline = ' '.join(re.findall(r"((with \S+) (\S+\.)?)", text)[0][0].split(' ')[1:])
+            airline = airline.rstrip()[:-1] # removing dot
+
+            times = re.findall(r"\d+:\d+ [APM]+", text)
+            dep_time = times[0]
+            arr_time = times[1]
+
+            dates = re.findall(r"\S+, \S+ \d", text)
+            dep_date = dates[0] + " 2023"
+            arr_date = dates[1] + " 2023"
+
+            duration = (re.findall(r"((duration \d+ hr\.?)+ (\d+ min)?)", text)[0][0])
+            duration = ' '.join(duration.split(' ')[1:]).rstrip()
+            if duration[-1] == '.':
+                duration = duration[:-1]       
+            
+            today = format_date(datetime.date.today())
+            
+            elem_dict = {
+                "date_readed": today,
+                "departure_date": dep_date,
+                "arrival_date": arr_date,
+                "return_date": format_date(RETURN_EARLIEST),
+                "price": int(price),
+                "airline": airline,
+                "duration": duration,
+                "stops": {
+                    "stops_num": stops,
+                    "place": stop_city,
+                    "stop_duration": stop_time,
+                }
             }
-        }
 
-        list_of_dicts.append(elem_dict)
+            file_dict["items"].append(elem_dict)
 
-    driver.close()
+        driver.close()
+    
+    with open(filename, 'w') as f:
+        print(file_dict)
+        json.dump(file_dict, f)
+
 
 """
 From 608 Polish zlotys round trip total. 
