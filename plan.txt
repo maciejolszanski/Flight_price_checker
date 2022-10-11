@@ -11,15 +11,17 @@ ver 1.0
 - saving as json in append mode: dates, airlines, price, airport to change
 
 {
+    "name": "flight_prices",
     "items" : [
-        "date_readed": [
-            "departure_date": date,
-            "return_date": date,
-            "price": float
-            "stops": int,
-            "airlines": string,
-            "duration": string,
-        ],
-        [...]
+        {
+        "date_readed": 
+        "departure_date": date,
+        "return_date": date,
+        "price": float
+        "stops": int,
+        "airlines": string,
+        "duration": string,
+        },
+        {...}
     ]
 }
