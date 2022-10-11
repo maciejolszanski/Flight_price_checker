@@ -15,13 +15,14 @@ ver 1.0
     "items" : [
         {
             "date_readed": 
-            "departure_date": date,
-            "return_date": date,
-            "price": float
-            "airlines": string,
+            "departure_date": string,
+            "arrival_date: string,
+            "return_date": string,
+            "price": int,
+            "airline": string,
             "duration": string,
             "stops": [
-                "amount: int,
+                "stops_num": int,
                 "place": string,
                 "duration": int,
             ]
