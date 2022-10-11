@@ -21,6 +21,18 @@ def format_date_url(date):
 
     return formatted_date
 
+def input_dates(dep_date, ret_date):
+
+    # departure date form                          
+    dep_date_form = driver.find_element(By.XPATH, '//*[@id="yDmH0d"]/c-wiz[2]/div/div[2]/c-wiz/div[1]/c-wiz/div[2]/div[1]/div[1]/div[1]/div/div[2]/div[2]/div/div/div[1]/div/div/div[1]/div/div[1]/div/input')
+    dep_date_form.clear()                          
+    dep_date_form.send_keys(format_date_url(dep_date), Keys.ENTER)
+
+    # return date form 
+    ret_date_form = driver.find_element(By.XPATH, '//*[@id="yDmH0d"]/c-wiz[2]/div/div[2]/c-wiz/div[1]/c-wiz/div[2]/div[1]/div[1]/div[1]/div/div[2]/div[2]/div/div/div[1]/div/div/div[1]/div/div[2]/div/input')
+    ret_date_form.clear()
+    ret_date_form.send_keys(format_date_url(ret_date), Keys.ENTER)
+
 
 if __name__ == "__main__":
 
@@ -36,14 +48,10 @@ if __name__ == "__main__":
     driver.find_element(By.XPATH, '//*[@id="i14"]/div[4]/div/div/div[1]/div/div/input').click()
     destination_form = driver.find_element(By.XPATH, '//*[@id="i14"]/div[6]/div[2]/div[2]/div[1]/div/input')
     destination_form.clear()
-    destination_form.send_keys("Barcelona", Keys.ENTER)
+    destination_form.send_keys(DESTINATION, Keys.ENTER)
 
-    # departure date form                          
-    dep_date_form = driver.find_element(By.XPATH, '//*[@id="yDmH0d"]/c-wiz[2]/div/div[2]/c-wiz/div[1]/c-wiz/div[2]/div[1]/div[1]/div[1]/div/div[2]/div[2]/div/div/div[1]/div/div/div[1]/div/div[1]/div/input')
-    dep_date_form.clear()                          
-    dep_date_form.send_keys("2023.02.03", Keys.ENTER)
+    input_dates(DEPART_LATEST, RETURN_EARLIEST)
 
-    # return date form 
-    ret_date_form = driver.find_element(By.XPATH, '//*[@id="yDmH0d"]/c-wiz[2]/div/div[2]/c-wiz/div[1]/c-wiz/div[2]/div[1]/div[1]/div[1]/div/div[2]/div[2]/div/div/div[1]/div/div/div[1]/div/div[2]/div/input')
-    ret_date_form.clear()
-    ret_date_form.send_keys("2023.02.06", Keys.ENTER)
+    # search
+    driver.find_element(By.XPATH, '//*[@id="yDmH0d"]/c-wiz[2]/div/div[2]/c-wiz/div[1]/c-wiz/div[2]/div[1]/div[1]/div[2]/div/button').click()
+    
