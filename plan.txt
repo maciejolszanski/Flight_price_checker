@@ -9,3 +9,17 @@ ver 1.0
 - Determining each possible combination of dates
 - web scraping to get prices, airlines, hours, airport to change
 - saving as json in append mode: dates, airlines, price, airport to change
+
+{
+    "items" : [
+        "date_readed": [
+            "departure_date": date,
+            "return_date": date,
+            "price": float
+            "stops": int,
+            "airlines": string,
+            "duration": string,
+        ],
+        [...]
+    ]
+}
