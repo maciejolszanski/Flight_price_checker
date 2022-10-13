@@ -15,7 +15,7 @@ RETURN_EARLIEST = datetime.date(2023, 2, 6)
 RETURN_LASTEST = datetime.date(2023, 2, 8)
 DESTINATION = "Barcelona"
 GOOGLE_BASE_URL = f"https://www.google.com/travel/flights"
-
+FILENAME = r"data\flights_data.json"
 
 
 def format_date(date):
@@ -91,14 +91,11 @@ def choose_num_stops(num_stops):
     # close drop down menu
     driver.find_element(By.XPATH, '//*[@id="yDmH0d"]/c-wiz[2]/div/div[2]/c-wiz/div[1]/c-wiz/div[2]/div[1]/div/div[4]/div/div[2]/div[3]/div/div[1]/div[2]/span/button').click()
 
+def get_stops_data(text):
 
-def get_flight_data(elem, ret_date):
-
-    text = elem.get_attribute('aria-label')
-
-    price = re.findall(r"From \d+", text)[0].split(' ')[1]
-
+    single_stops_list = []
     nonstop = re.findall(r"\bNon", text)
+    
     if len(nonstop) > 0:
         stops = 0
         stop_time = None
@@ -106,8 +103,34 @@ def get_flight_data(elem, ret_date):
     else:
         stops = re.findall(r"\d+ stop", text)[0].split(' ')[0]
         stop_data = re.findall(r'((\d+ hr\s?)?(\d+ min)?)+ (overnight )?layover at (\S+)', text)
-        stop_time = stop_data[0][1].strip() + ' ' + stop_data[0][2].strip()
-        stop_city = stop_data[0][4].strip()
+
+        for i, stop in enumerate(stop_data):
+            stop_time = stop_data[i][1].lstrip() + stop_data[i][2].strip()
+            stop_city = stop_data[i][4].strip()
+            # print(i, stop_time, stop_city)
+
+            single_stop_dict = {
+                "stop_num": i+1,
+                "duration": stop_time,
+                "place": stop_city
+            }
+
+            single_stops_list.append(single_stop_dict)
+
+    stops_dict = {
+        "stops": int(stops),
+        "stops_data": single_stops_list
+    } 
+
+    return stops_dict
+
+def get_flight_data(elem, ret_date):
+
+    text = elem.get_attribute('aria-label')
+
+    price = re.findall(r"From \d+", text)[0].split(' ')[1]
+
+    stops_data = get_stops_data(text)
 
     airline = ' '.join(re.findall(r"((with \S+) (\S+\.)?)", text)[0][0].split(' ')[1:])
     airline = airline.rstrip()[:-1] # removing dot
@@ -137,14 +160,11 @@ def get_flight_data(elem, ret_date):
         "price": int(price),
         "airline": airline,
         "duration": duration,
-        "stops": {
-            "stops_num": stops,
-            "place": stop_city,
-            "stop_duration": stop_time,
-        }
+        "stops": stops_data
     }
 
     return elem_dict, int(price)
+
 
 if __name__ == "__main__":
 
@@ -159,14 +179,12 @@ if __name__ == "__main__":
 
     # search
     driver.find_element(By.XPATH, '//*[@id="yDmH0d"]/c-wiz[2]/div/div[2]/c-wiz/div[1]/c-wiz/div[2]/div[1]/div[1]/div[2]/div/button').click()
-    
-    filename = "flights_data.json"
 
     dates = find_all_dates(DEPART_EARLIEST, DEPART_LATEST, RETURN_EARLIEST, RETURN_LASTEST)
 
     prices = []
 
-    with open(filename, 'r') as f:
+    with open(FILENAME, 'r') as f:
 
         file_dict = json.load(f)
 
@@ -187,8 +205,8 @@ if __name__ == "__main__":
 
         driver.close()
     
-    with open(filename, 'w') as f:
-        # print(file_dict)
+    with open(r"data/test.json", 'w') as f:
+        print(file_dict)
         json.dump(file_dict, f)
 
 
