@@ -105,8 +105,8 @@ def get_flight_data(elem, ret_date):
         stop_city = None
     else:
         stops = re.findall(r"\d+ stop", text)[0].split(' ')[0]
-        stop_data = re.findall(r'((\d+ hr)? (\d+ min)?)+ (overnight )?layover at (\S+)', text)
-        stop_time = stop_data[0][0].strip()
+        stop_data = re.findall(r'((\d+ hr\s?)?(\d+ min)?)+ (overnight )?layover at (\S+)', text)
+        stop_time = stop_data[0][1].strip() + ' ' + stop_data[0][2].strip()
         stop_city = stop_data[0][4].strip()
 
     airline = ' '.join(re.findall(r"((with \S+) (\S+\.)?)", text)[0][0].split(' ')[1:])
@@ -185,7 +185,7 @@ if __name__ == "__main__":
 
                 file_dict["items"].append(elem_dict)
 
-        # driver.close()
+        driver.close()
     
     with open(filename, 'w') as f:
         # print(file_dict)
