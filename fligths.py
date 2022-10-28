@@ -124,9 +124,10 @@ def get_stops_data(text):
 
     return stops_dict
 
-def get_flight_data(text):
+def get_flight_data(elem, ret_date):
 
-    
+    text = elem.get_attribute('aria-label')
+
     price = re.findall(r"From \d+", text)[0].split(' ')[1]
 
     stops_data = get_stops_data(text)
@@ -147,11 +148,16 @@ def get_flight_data(text):
     if duration[-1] == '.':
         duration = duration[:-1]       
     
+    today = format_date(datetime.date.today())
+    
     elem_dict = {
+        "date_readed": today,
         "departure_date": dep_date,
         "arrival_date": arr_date,
         "departure_time": dep_time,
         "arrival_time": arr_time,
+        "return_date": format_date(ret_date),
+        "price": int(price),
         "airline": airline,
         "duration": duration,
         "stops": stops_data
@@ -175,6 +181,7 @@ if __name__ == "__main__":
     driver.find_element(By.XPATH, '//*[@id="yDmH0d"]/c-wiz[2]/div/div[2]/c-wiz/div[1]/c-wiz/div[2]/div[1]/div[1]/div[2]/div/button').click()
 
     dates = find_all_dates(DEPART_EARLIEST, DEPART_LATEST, RETURN_EARLIEST, RETURN_LASTEST)
+
     prices = []
 
     with open(FILENAME, 'r') as f:
@@ -188,58 +195,17 @@ if __name__ == "__main__":
             # choose_num_stops(0)
 
             all_results = driver.find_elements(By.CLASS_NAME, 'JMc5Xc')
-            all_buttons_to_ret_flights = driver.find_elements(By.CLASS_NAME, "yR1fYc")
 
-            today = format_date(datetime.date.today())
-            
-            # for dep_elem, logo in zip(all_results, all_buttons_to_ret_flights):
-            for i in range(max(4,len(all_results))):
-
-                results = driver.find_elements(By.CLASS_NAME, 'JMc5Xc')
-                buttons_to_ret_flights = driver.find_elements(By.CLASS_NAME, "yR1fYc")
-
-                dep_elem = results[i]
-                button_to_returns = buttons_to_ret_flights[i]
-
-                flights_data_dict = {}
-                flights_data_dict["date_readed"] = today
-
-                dep_elem = results[i]
-                button_to_returns = buttons_to_ret_flights[i]
+            for elem in all_results:
                 
-                dep_text =  dep_elem.get_attribute('aria-label')
-                dep_dict, _ = get_flight_data(dep_text)
+                elem_dict, price = get_flight_data(elem, ret_date)
+                prices.append(price)
 
-                # go to return flights
-                button_to_returns.click()
+                file_dict["items"].append(elem_dict)
 
-                all_return_results = driver.find_elements(By.CLASS_NAME, 'JMc5Xc')
-
-                # for ret_elem in all_return_results:
-                for j in range(max(3,len(all_return_results))):
-                    return_results = driver.find_elements(By.CLASS_NAME, 'JMc5Xc')
-                    print("i: ", i, 'j:', j)
-                    ret_elem = return_results[j]
-                    ret_text =  ret_elem.get_attribute('aria-label')
-                    ret_dict, price = get_flight_data(ret_text)
-                    flights_data_dict["departure_data"] = dep_dict
-                    flights_data_dict["return_data"] = ret_dict
-                    flights_data_dict["price"] = price
-
-                    file_dict["items"].append(flights_data_dict)
-                    print(json.dumps(flights_data_dict, indent=4))
-                
-                # ret_date_form = driver.find_element(By.XPATH, '//*[@id="yDmH0d"]/c-wiz[2]/div/div[2]/c-wiz/div[1]/c-wiz/div[2]/div[1]/div/div[2]/div[2]/div/div/div[1]/div/div/div[1]/div/div[2]/div/input')
-                # ret_date_form.send_keys(Keys.ENTER)
-                driver.find_element(By.XPATH, '//*[@id="yDmH0d"]/c-wiz[2]/div/div[2]/c-wiz/div[1]/c-wiz/div[2]/div[2]/div[2]/div/ol/li[1]/span/span/span/div').click()
-                                             
-                # prices.append(price)
-
-                
-
-        # driver.close()
+        driver.close()
     
-    with open(r"data/test.json", 'w') as f:
+    with open(FILENAME, 'w') as f:
         print(file_dict)
         json.dump(file_dict, f, indent=4)
 
