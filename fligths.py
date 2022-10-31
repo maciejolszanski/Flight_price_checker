@@ -43,10 +43,16 @@ def find_all_dates(dep_earl, dep_lat, ret_earl, ret_lat):
 
     return dates_list
 
-def input_destination(dest):
+def input_destination(source, dest):
 
-    # filling destination, at first we need to click the field, and then select
+    # filling source and destination, at first we need to click the field, and then select
     # the field that is enlarged - has different XPATH
+
+    driver.find_element(By.XPATH, '//*[@id="i14"]/div[1]/div/div/div[1]/div/div/input').click()
+    source_form = driver.find_element(By.XPATH, '//*[@id="i14"]/div[6]/div[2]/div[2]/div[1]/div/input')
+    source_form.clear()
+    source_form.send_keys(source, Keys.ENTER)
+
     driver.find_element(By.XPATH, '//*[@id="i14"]/div[4]/div/div/div[1]/div/div/input').click()
     destination_form = driver.find_element(By.XPATH, '//*[@id="i14"]/div[6]/div[2]/div[2]/div[1]/div/input')
     destination_form.clear()
@@ -175,7 +181,7 @@ if __name__ == "__main__":
     # accepting cookies
     driver.find_element(By.XPATH, '//*[@id="yDmH0d"]/c-wiz/div/div/div/div[2]/div[1]/div[3]/div[1]/div[1]/form[2]/div/div/button').click()
 
-    input_destination(DESTINATION)
+    input_destination("Kraków", DESTINATION)
 
     # search
     driver.find_element(By.XPATH, '//*[@id="yDmH0d"]/c-wiz[2]/div/div[2]/c-wiz/div[1]/c-wiz/div[2]/div[1]/div[1]/div[2]/div/button').click()
@@ -206,8 +212,8 @@ if __name__ == "__main__":
         driver.close()
     
     with open(FILENAME, 'w') as f:
-        print(file_dict)
         json.dump(file_dict, f, indent=4)
+        print("SUCCEEDED")
 
 
 """
