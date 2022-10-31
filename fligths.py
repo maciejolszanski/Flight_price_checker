@@ -138,8 +138,8 @@ def get_flight_data(elem, ret_date):
 
     stops_data = get_stops_data(text)
 
-    airline = ' '.join(re.findall(r"((with \S+) (\S+\.)?)", text)[0][0].split(' ')[1:])
-    airline = airline.rstrip()[:-1] # removing dot
+    airlines = re.findall(r"(with ([a-zA-Z ]+\.))", text)[0][-1].strip()[:-1]
+    airlines = airlines.split(' and ')
 
     times = re.findall(r"\d+:\d+ [APM]+", text)
     dep_time = times[0]
@@ -164,7 +164,7 @@ def get_flight_data(elem, ret_date):
         "arrival_time": arr_time,
         "return_date": format_date(ret_date),
         "price": int(price),
-        "airline": airline,
+        "airline": airlines,
         "duration": duration,
         "stops": stops_data
     }
