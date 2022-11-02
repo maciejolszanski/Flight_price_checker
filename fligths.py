@@ -14,6 +14,7 @@ DEPART_LATEST = datetime.date(2023, 2, 3)
 RETURN_EARLIEST = datetime.date(2023, 2, 6)
 RETURN_LASTEST = datetime.date(2023, 2, 8)
 DESTINATION = "Barcelona"
+SOURCE = "Kraków"
 GOOGLE_BASE_URL = f"https://www.google.com/travel/flights"
 FILENAME = r"data\flights_data.json"
 
@@ -111,9 +112,8 @@ def get_stops_data(text):
         stop_data = re.findall(r'((\d+ hr\s?)?(\d+ min)?)+ (overnight )?layover at (\S+)', text)
 
         for i, stop in enumerate(stop_data):
-            stop_time = stop_data[i][1].lstrip() + stop_data[i][2].strip()
-            stop_city = stop_data[i][4].strip()
-            # print(i, stop_time, stop_city)
+            stop_time =  stop[1].lstrip() + stop[2].strip()
+            stop_city = stop[4].strip()
 
             single_stop_dict = {
                 "stop_num": i+1,
@@ -132,7 +132,10 @@ def get_stops_data(text):
 
 def get_flight_data(elem, ret_date):
 
-    text = elem.get_attribute('aria-label')
+    try: text = elem.get_attribute('aria-label')
+    except Exception as err: 
+        print('Handling run-time error:', err)
+        return None, False
 
     price = re.findall(r"From \d+", text)[0].split(' ')[1]
 
@@ -153,9 +156,9 @@ def get_flight_data(elem, ret_date):
     duration = ' '.join(duration.split(' ')[1:]).rstrip()
     if duration[-1] == '.':
         duration = duration[:-1]       
-    
+
     today = format_date(datetime.date.today())
-    
+
     elem_dict = {
         "date_readed": today,
         "departure_date": dep_date,
@@ -169,7 +172,7 @@ def get_flight_data(elem, ret_date):
         "stops": stops_data
     }
 
-    return elem_dict, int(price)
+    return elem_dict, True
 
 
 if __name__ == "__main__":
@@ -181,53 +184,39 @@ if __name__ == "__main__":
     # accepting cookies
     driver.find_element(By.XPATH, '//*[@id="yDmH0d"]/c-wiz/div/div/div/div[2]/div[1]/div[3]/div[1]/div[1]/form[2]/div/div/button').click()
 
-    input_destination("Kraków", DESTINATION)
+    source = SOURCE
+    dest = DESTINATION
+    input_destination(source, dest)
 
     # search
     driver.find_element(By.XPATH, '//*[@id="yDmH0d"]/c-wiz[2]/div/div[2]/c-wiz/div[1]/c-wiz/div[2]/div[1]/div[1]/div[2]/div/button').click()
 
     dates = find_all_dates(DEPART_EARLIEST, DEPART_LATEST, RETURN_EARLIEST, RETURN_LASTEST)
 
-    prices = []
+    errors = 0
 
     with open(FILENAME, 'r') as f:
 
         file_dict = json.load(f)
 
-        for (dep_date, ret_date) in dates:
-            input_dates(dep_date, ret_date)
+    for (dep_date, ret_date) in dates:
+        input_dates(dep_date, ret_date)
 
-            # Sometimes the ID changes so this does not work always
-            # choose_num_stops(0)
+        all_results = driver.find_elements(By.CLASS_NAME, 'JMc5Xc')
 
-            all_results = driver.find_elements(By.CLASS_NAME, 'JMc5Xc')
+        for elem in all_results:
 
-            for elem in all_results:
-                
-                elem_dict, price = get_flight_data(elem, ret_date)
-                prices.append(price)
+            elem_dict, do_append = get_flight_data(elem, ret_date)
 
+            if do_append:
                 file_dict["items"].append(elem_dict)
+            else:
+                errors += 1
 
-        driver.close()
-    
+    driver.close()
+    print("\nWeb Scraping: SUCCEEDED")
+    print(f"Unable to read {errors} flights data")
+
     with open(FILENAME, 'w') as f:
         json.dump(file_dict, f, indent=4)
-        print("SUCCEEDED")
-
-
-"""
-From 608 Polish zlotys round trip total. 
-1 stop flight with Lufthansa. 
-Leaves John Paul II Kraków-Balice International Airport at 1:25 PM on Friday, February 3 
-and arrives at Josep Tarradellas Barcelona-El Prat Airport at 5:35 PM on Friday, February 3.
-Total duration 4 hr 10 min. 
-Layover (1 of 1) is a 50 min layover at Munich International Airport in Munich. 
-Select flight
-
-From 1158 Polish zlotys round trip total.
-This price does not include overhead bin access.
-Nonstop flight with Wizz Air.
-Leaves John Paul II Kraków-Balice International Airport at 6:45 AM on Friday, February 3
-and arrives at Josep Tarradellas Barcelona-El Prat Airport at 9:30 AM on Friday, February 3
-"""
+        print("Writing Data to File: SUCCEEDED\n")
