@@ -20,12 +20,18 @@ FILENAME = r"data\flights_data.json"
 
 
 def format_date(date):
+    """Change data formatting from yyyy-mm-dd to yyyy.mm.dd"""
 
     formatted_date = '.'.join(str(date).split('-'))
 
     return formatted_date
 
 def find_all_dates(dep_earl, dep_lat, ret_earl, ret_lat):
+    """
+    returns all possible combination of dates in given range
+    Departures from dep_earl to dep_late
+    Returns from ret_earl to ret_lat
+    """
 
     dep = dep_earl
     ret = ret_earl
@@ -45,9 +51,10 @@ def find_all_dates(dep_earl, dep_lat, ret_earl, ret_lat):
     return dates_list
 
 def input_destination(source, dest):
-
-    # filling source and destination, at first we need to click the field, and then select
-    # the field that is enlarged - has different XPATH
+    """
+    Filling source and destination airports, at first we need to click the field, and then 
+    select the field that is enlarged. It has different XPATH
+    """
 
     driver.find_element(By.XPATH, '//*[@id="i14"]/div[1]/div/div/div[1]/div/div/input').click()
     source_form = driver.find_element(By.XPATH, '//*[@id="i14"]/div[6]/div[2]/div[2]/div[1]/div/input')
@@ -59,6 +66,7 @@ def input_destination(source, dest):
     destination_form.clear()
     destination_form.send_keys(dest, Keys.ENTER)
 
+    # Stop is needed to be sure that the airports have been changed
     sleep(1)
 
 def input_dates(dep_date, ret_date):
@@ -99,14 +107,16 @@ def choose_num_stops(num_stops):
     driver.find_element(By.XPATH, '//*[@id="yDmH0d"]/c-wiz[2]/div/div[2]/c-wiz/div[1]/c-wiz/div[2]/div[1]/div/div[4]/div/div[2]/div[3]/div/div[1]/div[2]/span/button').click()
 
 def get_stops_data(text):
+    """
+    Retrieves the information about the stops.
+    At first it checks whether there are any stops, if so scrapes the info about them
+    """
 
     single_stops_list = []
     nonstop = re.findall(r"\bNon", text)
     
     if len(nonstop) > 0:
         stops = 0
-        stop_time = None
-        stop_city = None
     else:
         stops = re.findall(r"\d+ stop", text)[0].split(' ')[0]
         stop_data = re.findall(r'((\d+ hr\s?)?(\d+ min)?)+ (overnight )?layover at (\S+)', text)
@@ -130,33 +140,58 @@ def get_stops_data(text):
 
     return stops_dict
 
-def get_flight_data(elem, ret_date):
+def get_airlines(text):
 
+    airlines = re.findall(r"(with ([a-zA-Z ]+\.))", text)[0][-1].strip()[:-1]
+    airlines = airlines.split(' and ')
+
+    return airlines
+
+def get_times(text):
+
+    times = re.findall(r"\d+:\d+ [APM]+", text)
+    dep_time = times[0]
+    arr_time = times[1]
+
+    return dep_time, arr_time
+
+def get_dates(text):
+
+    dates = re.findall(r"\S+, \S+ \d", text)
+    dep_date = dates[0] + " 2023"
+    arr_date = dates[1] + " 2023"
+
+    return dep_date, arr_date
+
+def get_duration(text):
+
+    duration = (re.findall(r"((duration \d+ hr\.?)+ (\d+ min)?)", text)[0][0])
+    duration = ' '.join(duration.split(' ')[1:]).rstrip()
+    if duration[-1] == '.':
+        duration = duration[:-1] 
+
+    return duration
+
+def get_flight_data(elem, ret_date):
+    """
+    Reads all necessary data about the flight. This function reads the text
+    describing particular flight and using regex retrieves particular info.
+    All read data are stored in dictionary.
+    """
+
+    # Sometimes there are errors with reading text describing flight
+    # If it happens just skip this flight
     try: text = elem.get_attribute('aria-label')
     except Exception as err: 
         print('Handling run-time error:', err)
         return None, False
 
     price = re.findall(r"From \d+", text)[0].split(' ')[1]
-
     stops_data = get_stops_data(text)
-
-    airlines = re.findall(r"(with ([a-zA-Z ]+\.))", text)[0][-1].strip()[:-1]
-    airlines = airlines.split(' and ')
-
-    times = re.findall(r"\d+:\d+ [APM]+", text)
-    dep_time = times[0]
-    arr_time = times[1]
-
-    dates = re.findall(r"\S+, \S+ \d", text)
-    dep_date = dates[0] + " 2023"
-    arr_date = dates[1] + " 2023"
-
-    duration = (re.findall(r"((duration \d+ hr\.?)+ (\d+ min)?)", text)[0][0])
-    duration = ' '.join(duration.split(' ')[1:]).rstrip()
-    if duration[-1] == '.':
-        duration = duration[:-1]       
-
+    airlines = get_airlines(text)
+    dep_time, arr_time = get_times(text)
+    dep_date, arr_date = get_dates(text)
+    duration = get_duration(text)
     today = format_date(datetime.date.today())
 
     elem_dict = {
@@ -188,20 +223,24 @@ if __name__ == "__main__":
     dest = DESTINATION
     input_destination(source, dest)
 
-    # search
+    # click search button
     driver.find_element(By.XPATH, '//*[@id="yDmH0d"]/c-wiz[2]/div/div[2]/c-wiz/div[1]/c-wiz/div[2]/div[1]/div[1]/div[2]/div/button').click()
 
     dates = find_all_dates(DEPART_EARLIEST, DEPART_LATEST, RETURN_EARLIEST, RETURN_LASTEST)
 
     errors = 0
 
+    # Read previously gathered data in order to append new flights data
+    # (There are separate 'with' statements to read and write data, 
+    # because sometimes the selenium web driver fails
+    # and there are problem with closing the file safely
+    # so I decided not to webscrape with the file opened)
     with open(FILENAME, 'r') as f:
-
         file_dict = json.load(f)
 
     for (dep_date, ret_date) in dates:
-        input_dates(dep_date, ret_date)
 
+        input_dates(dep_date, ret_date)
         all_results = driver.find_elements(By.CLASS_NAME, 'JMc5Xc')
 
         for elem in all_results:
@@ -217,6 +256,11 @@ if __name__ == "__main__":
     print("\nWeb Scraping: SUCCEEDED")
     print(f"Unable to read {errors} flights data")
 
+    # Open the previously saved data and append new data
+    # (There are separate 'with' statements to read and write data, 
+    # because sometimes the selenium web driver fails
+    # and there are problem with closing the file safely
+    # so I decided not to webscrape with the file opened)
     with open(FILENAME, 'w') as f:
         json.dump(file_dict, f, indent=4)
         print("Writing Data to File: SUCCEEDED\n")
