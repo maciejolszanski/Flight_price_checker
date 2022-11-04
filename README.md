@@ -2,8 +2,8 @@
 
 The name says everything :D
 
+I made this project to monitor flights prices to Barcelona, because I wanted to visit FC Barcelona home match. Please feel free to use it and modify it to your own purposes 😄
 
-In version 1.0 i plan only to check flights to Barcelona between fixed dates. I plan to visit FC Barcelona match during that weekend and I am looking for the best fligt prices ;)
 
 ## How to use
 ### 1. Download this repository to your local machine
