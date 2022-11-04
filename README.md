@@ -33,4 +33,14 @@ The web driver has to be installed in PATH or its location should be specified i
 For more information about drivers please refer the official documentation https://www.selenium.dev/documentation/webdriver/getting_started/
 
 ### 5. Run code
-Python file responsible for web scraping is ```flights.py```. Run it and wait until the web scraping is done.
+Python file responsible for web scraping is ```flights.py```. Run it and wait until the web scraping is done - in the terminal will appear following text:
+```
+-----------------------------
+Web Scraping: SUCCEEDED
+Unable to read 0 flights data
+-----------------------------
+Writing Data to File: SUCCEEDED
+-----------------------------
+```
+
+There will be created a new directry named ```\data``` and a file inside it named ```flights_data.json```. This file contains all data from the begginning of your web scraping. You can use it to do analysis on your own or use my Jupyter notebook named  ```visualize.ipynb```.
