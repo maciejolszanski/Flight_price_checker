@@ -197,6 +197,8 @@ def get_flight_data(elem, ret_date):
 
     elem_dict = {
         "date_readed": today,
+        "origin": ORIGIN,
+        "destination": DESTINATION,
         "departure_date": dep_date,
         "arrival_date": arr_date,
         "departure_time": dep_time,
