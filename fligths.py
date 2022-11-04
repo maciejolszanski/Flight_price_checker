@@ -13,9 +13,9 @@ from selenium.webdriver.common.by import By
 DEPART_EARLIEST = datetime.date(2023, 2, 2)
 DEPART_LATEST = datetime.date(2023, 2, 3)
 RETURN_EARLIEST = datetime.date(2023, 2, 6)
-RETURN_LASTEST = datetime.date(2023, 2, 8)
+RETURN_LATEST = datetime.date(2023, 2, 8)
 DESTINATION = "Barcelona"
-SOURCE = "Kraków"
+ORIGIN = "Kraków"
 GOOGLE_BASE_URL = f"https://www.google.com/travel/flights"
 FILENAME = r"data\flights_data.json"
 
@@ -51,16 +51,16 @@ def find_all_dates(dep_earl, dep_lat, ret_earl, ret_lat):
 
     return dates_list
 
-def input_destination(source, dest):
+def input_destination(origin, dest):
     """
-    Filling source and destination airports, at first we need to click the field, and then 
+    Filling origin and destination airports, at first we need to click the field, and then 
     select the field that is enlarged. It has different XPATH
     """
 
     driver.find_element(By.XPATH, '//*[@id="i14"]/div[1]/div/div/div[1]/div/div/input').click()
-    source_form = driver.find_element(By.XPATH, '//*[@id="i14"]/div[6]/div[2]/div[2]/div[1]/div/input')
-    source_form.clear()
-    source_form.send_keys(source, Keys.ENTER)
+    origin_form = driver.find_element(By.XPATH, '//*[@id="i14"]/div[6]/div[2]/div[2]/div[1]/div/input')
+    origin_form.clear()
+    origin_form.send_keys(origin, Keys.ENTER)
 
     driver.find_element(By.XPATH, '//*[@id="i14"]/div[4]/div/div/div[1]/div/div/input').click()
     destination_form = driver.find_element(By.XPATH, '//*[@id="i14"]/div[6]/div[2]/div[2]/div[1]/div/input')
@@ -213,10 +213,10 @@ def get_flight_data(elem, ret_date):
 
 if __name__ == "__main__":
 
-    source = SOURCE
+    origin = ORIGIN
     dest = DESTINATION
 
-    # Sometimes web driver cannot find the source or destination fields
+    # Sometimes web driver cannot find the origin or destination fields
     # In such case the browser is restarted
     while True:
 
@@ -227,11 +227,11 @@ if __name__ == "__main__":
         # accepting cookies
         driver.find_element(By.XPATH, '//*[@id="yDmH0d"]/c-wiz/div/div/div/div[2]/div[1]/div[3]/div[1]/div[1]/form[2]/div/div/button').click()
 
-        try: input_destination(source, dest)
+        try: input_destination(origin, dest)
         except Exception as e:
             driver.close()
             print('-' * 58)
-            print("Problems with Source or Destination input... Trying again!")
+            print("Problems with Origin or Destination input... Trying again!")
             print('-' * 58)
             continue
 
@@ -240,7 +240,7 @@ if __name__ == "__main__":
     # click search button
     driver.find_element(By.XPATH, '//*[@id="yDmH0d"]/c-wiz[2]/div/div[2]/c-wiz/div[1]/c-wiz/div[2]/div[1]/div[1]/div[2]/div/button').click()
 
-    dates = find_all_dates(DEPART_EARLIEST, DEPART_LATEST, RETURN_EARLIEST, RETURN_LASTEST)
+    dates = find_all_dates(DEPART_EARLIEST, DEPART_LATEST, RETURN_EARLIEST, RETURN_LATEST)
 
     errors = 0
 
