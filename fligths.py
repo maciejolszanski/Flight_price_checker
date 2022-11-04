@@ -1,6 +1,7 @@
 import re
 import datetime
 import json
+import os
 
 from time import sleep
 
@@ -243,14 +244,21 @@ if __name__ == "__main__":
 
     errors = 0
 
+    # Create file if does not exist
+    if not os.path.exists(FILENAME):
+        with open(FILENAME, 'w') as f:
+            pass
+
     # Read previously gathered data in order to append new flights data
     # (There are separate 'with' statements to read and write data, 
     # because sometimes the selenium web driver fails
     # and there are problem with closing the file safely
     # so I decided not to webscrape with the file opened)
     with open(FILENAME, 'r') as f:
-        file_dict = json.load(f)
+        try: file_dict = json.load(f)
+        except: file_dict = {"name": "Flights_data", "items": []}
 
+    # Get flights data for each date
     for (dep_date, ret_date) in dates:
 
         input_dates(dep_date, ret_date)
@@ -266,10 +274,10 @@ if __name__ == "__main__":
                 errors += 1
 
     driver.close()
-    print('\n' + '-' * 29)
+    print('\n' + '-' * 31)
     print("Web Scraping: SUCCEEDED")
     print(f"Unable to read {errors} flights data")
-    print('-' * 29)
+    print('-' * 31)
 
     # Open the previously saved data and append new data
     # (There are separate 'with' statements to read and write data, 
@@ -278,5 +286,5 @@ if __name__ == "__main__":
     # so I decided not to webscrape with the file opened)
     with open(FILENAME, 'w') as f:
         json.dump(file_dict, f, indent=4)
-        print("Writing Data to File: SUCCEEDED\n")
-        print('-' * 29)
+        print("Writing Data to File: SUCCEEDED")
+        print('-' * 31)
