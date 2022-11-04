@@ -33,4 +33,25 @@ The web driver has to be installed in PATH or its location should be specified i
 For more information about drivers please refer the official documentation https://www.selenium.dev/documentation/webdriver/getting_started/
 
 ### 5. Run code
-Python file responsible for web scraping is ```flights.py```. Run it and wait until the web scraping is done.
+Python file responsible for web scraping is ```flights.py```. Run it and wait until the web scraping is done - in the terminal will appear following text:
+```
+-----------------------------
+Web Scraping: SUCCEEDED
+Unable to read 0 flights data
+-----------------------------
+Writing Data to File: SUCCEEDED
+-----------------------------
+```
+
+There will be created a new directry named ```\data``` and a file inside it named ```flights_data.json```. This file contains all data from the begginning of your web scraping. You can use it to do analysis on your own or use my Jupyter notebook named  ```visualize.ipynb```.
+
+### 6. Customize
+This project was made in order to monitor prices of flights to Barcelona between fixed dates. Due to that fact there is no customisation provided. Although it is very easy to change origin, destination and dates. There are global constants at the beggining of the ```flights.py```. You can change them to customize your search. Be aware that there is no protection against saving different origin or destination data to one file.
+```
+DEPART_EARLIEST = datetime.date(2023, 2, 2)
+DEPART_LATEST = datetime.date(2023, 2, 3)
+RETURN_EARLIEST = datetime.date(2023, 2, 6)
+RETURN_LATEST = datetime.date(2023, 2, 8)
+DESTINATION = "Barcelona"
+ORIGIN = "Kraków"
+```
