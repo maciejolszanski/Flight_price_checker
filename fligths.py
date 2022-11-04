@@ -212,16 +212,29 @@ def get_flight_data(elem, ret_date):
 
 if __name__ == "__main__":
 
-    driver = webdriver.Edge()
-    driver.implicitly_wait(3)
-    driver.get(GOOGLE_BASE_URL)
-
-    # accepting cookies
-    driver.find_element(By.XPATH, '//*[@id="yDmH0d"]/c-wiz/div/div/div/div[2]/div[1]/div[3]/div[1]/div[1]/form[2]/div/div/button').click()
-
     source = SOURCE
     dest = DESTINATION
-    input_destination(source, dest)
+
+    # Sometimes web driver cannot find the source or destination fields
+    # In such case the browser is restarted
+    while True:
+
+        driver = webdriver.Edge()
+        driver.implicitly_wait(3)
+        driver.get(GOOGLE_BASE_URL)
+
+        # accepting cookies
+        driver.find_element(By.XPATH, '//*[@id="yDmH0d"]/c-wiz/div/div/div/div[2]/div[1]/div[3]/div[1]/div[1]/form[2]/div/div/button').click()
+
+        try: input_destination(source, dest)
+        except Exception as e:
+            driver.close()
+            print('-' * 58)
+            print("Problems with Source or Destination input... Trying again!")
+            print('-' * 58)
+            continue
+
+        break
 
     # click search button
     driver.find_element(By.XPATH, '//*[@id="yDmH0d"]/c-wiz[2]/div/div[2]/c-wiz/div[1]/c-wiz/div[2]/div[1]/div[1]/div[2]/div/button').click()
@@ -253,8 +266,10 @@ if __name__ == "__main__":
                 errors += 1
 
     driver.close()
-    print("\nWeb Scraping: SUCCEEDED")
+    print('\n' + '-' * 29)
+    print("Web Scraping: SUCCEEDED")
     print(f"Unable to read {errors} flights data")
+    print('-' * 29)
 
     # Open the previously saved data and append new data
     # (There are separate 'with' statements to read and write data, 
@@ -264,3 +279,4 @@ if __name__ == "__main__":
     with open(FILENAME, 'w') as f:
         json.dump(file_dict, f, indent=4)
         print("Writing Data to File: SUCCEEDED\n")
+        print('-' * 29)
