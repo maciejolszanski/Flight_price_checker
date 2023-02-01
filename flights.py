@@ -2,6 +2,7 @@ import re
 import datetime
 import json
 import os
+import sys
 
 from time import sleep
 
@@ -215,14 +216,31 @@ def get_flight_data(elem, ret_date):
 
 if __name__ == "__main__":
 
-    origin = ORIGIN
-    dest = DESTINATION
+    try:
+        origin = sys.argv[1]
+        dest = sys.argv[2]
+    except:
+        origin = ORIGIN
+        dest = DESTINATION
+    
+    try:
+        dep_earl = sys.argv[3]
+        dep_late = sys.argv[4]
+        ret_earl = sys.argv[5]
+        ret_late = sys.argv[6]
+    except:
+        dep_earl = DEPART_EARLIEST
+        dep_late = DEPART_LATEST
+        ret_earl = RETURN_EARLIEST
+        ret_late = RETURN_LATEST
+
 
     # Sometimes web driver cannot find the origin or destination fields
     # In such case the browser is restarted
     while True:
 
-        driver = webdriver.Edge()
+        edgedriver_path = "driver\msedgedriver.exe"
+        driver = webdriver.Edge(executable_path=edgedriver_path)
         driver.implicitly_wait(3)
         driver.get(GOOGLE_BASE_URL)
 
