@@ -1,4 +1,5 @@
-/env
+/fl_env
 /data
+/__pycache__
 
 test.py

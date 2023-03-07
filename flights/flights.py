@@ -6,19 +6,23 @@ import sys
 
 from time import sleep
 
+import selenium
 from selenium import webdriver
+from selenium.webdriver.edge.service import Service
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
+import logging
 
 
-DEPART_EARLIEST = datetime.date(2023, 2, 2)
-DEPART_LATEST = datetime.date(2023, 2, 3)
-RETURN_EARLIEST = datetime.date(2023, 2, 6)
-RETURN_LATEST = datetime.date(2023, 2, 8)
+
+DEPART_EARLIEST = datetime.date(2023, 6, 20)
+DEPART_LATEST = datetime.date(2023, 6, 20)
+RETURN_EARLIEST = datetime.date(2023, 6, 24)
+RETURN_LATEST = datetime.date(2023, 6, 24)
 DESTINATION = "Barcelona"
 ORIGIN = "Kraków"
 GOOGLE_BASE_URL = f"https://www.google.com/travel/flights"
-FILENAME = r"data\flights_data.json"
+
 
 
 def format_date(date):
@@ -57,15 +61,16 @@ def input_destination(origin, dest):
     Filling origin and destination airports, at first we need to click the field, and then 
     select the field that is enlarged. It has different XPATH
     """
-
-    driver.find_element(By.XPATH, '//*[@id="i14"]/div[1]/div/div/div[1]/div/div/input').click()
-    origin_form = driver.find_element(By.XPATH, '//*[@id="i14"]/div[6]/div[2]/div[2]/div[1]/div/input')
+                     
+    driver.find_element(By.XPATH, '//*[@id="i15"]/div[1]/div/div/div[1]/div/div/input').click()
+    origin_form = driver.find_element(By.XPATH, '//*[@id="i15"]/div[6]/div[2]/div[2]/div[1]/div/input')
     origin_form.clear()
     origin_form.send_keys(origin, Keys.ENTER)
 
-    driver.find_element(By.XPATH, '//*[@id="i14"]/div[4]/div/div/div[1]/div/div/input').click()
-    destination_form = driver.find_element(By.XPATH, '//*[@id="i14"]/div[6]/div[2]/div[2]/div[1]/div/input')
+    driver.find_element(By.XPATH, '//*[@id="i15"]/div[4]/div/div/div[1]/div/div/input').click()
+    destination_form = driver.find_element(By.XPATH, '//*[@id="i15"]/div[6]/div[2]/div[2]/div[1]/div/input')
     destination_form.clear()
+    sleep(0.3)
     destination_form.send_keys(dest, Keys.ENTER)
 
     # Stop is needed to be sure that the airports have been changed
@@ -188,6 +193,9 @@ def get_flight_data(elem, ret_date):
         print('Handling run-time error:', err)
         return None, False
 
+    # replacing short spaces
+    text = text.replace("\u202f", " ")
+    
     price = re.findall(r"From \d+", text)[0].split(' ')[1]
     stops_data = get_stops_data(text)
     airlines = get_airlines(text)
@@ -224,25 +232,36 @@ if __name__ == "__main__":
         dest = DESTINATION
     
     try:
-        dep_earl = sys.argv[3]
-        dep_late = sys.argv[4]
-        ret_earl = sys.argv[5]
-        ret_late = sys.argv[6]
+        dep_earl = datetime.datetime.strptime(sys.argv[3], "%d-%m-%Y").date()
+        dep_late = datetime.datetime.strptime(sys.argv[4], "%d-%m-%Y").date()
+        ret_earl = datetime.datetime.strptime(sys.argv[5], "%d-%m-%Y").date()
+        ret_late = datetime.datetime.strptime(sys.argv[6], "%d-%m-%Y").date()
     except:
         dep_earl = DEPART_EARLIEST
         dep_late = DEPART_LATEST
         ret_earl = RETURN_EARLIEST
         ret_late = RETURN_LATEST
 
+    filename = f"data\\{origin}_{dest}_flights_data.json"
 
     # Sometimes web driver cannot find the origin or destination fields
     # In such case the browser is restarted
     while True:
 
         edgedriver_path = "driver\msedgedriver.exe"
-        driver = webdriver.Edge(executable_path=edgedriver_path)
+        edge_service = Service(executable_path=edgedriver_path)
+        options = webdriver.EdgeOptions()
+        options.add_argument("log-level-3")
+        options.add_argument("start-maximized")
+        options.add_argument("disable-logging")
+        driver = webdriver.Edge(service=edge_service, options=options)
         driver.implicitly_wait(3)
         driver.get(GOOGLE_BASE_URL)
+        
+        logger = logging.getLogger('urllib3.connectionpool')
+        logger.setLevel(logging.CRITICAL)
+        logger = logging.getLogger('selenium.webdriver.remote.remote_connection')
+        logger.setLevel(logging.CRITICAL)
 
         # accepting cookies
         driver.find_element(By.XPATH, '//*[@id="yDmH0d"]/c-wiz/div/div/div/div[2]/div[1]/div[3]/div[1]/div[1]/form[2]/div/div/button').click()
@@ -259,14 +278,13 @@ if __name__ == "__main__":
 
     # click search button
     driver.find_element(By.XPATH, '//*[@id="yDmH0d"]/c-wiz[2]/div/div[2]/c-wiz/div[1]/c-wiz/div[2]/div[1]/div[1]/div[2]/div/button').click()
-
-    dates = find_all_dates(DEPART_EARLIEST, DEPART_LATEST, RETURN_EARLIEST, RETURN_LATEST)
-
+    dates = find_all_dates(dep_earl, dep_late, ret_earl, ret_late)
     errors = 0
+    read = 0
 
     # Create file if does not exist
-    if not os.path.exists(FILENAME):
-        with open(FILENAME, 'w') as f:
+    if not os.path.exists(filename):
+        with open(filename, 'w') as f:
             pass
 
     # Read previously gathered data in order to append new flights data
@@ -274,28 +292,39 @@ if __name__ == "__main__":
     # because sometimes the selenium web driver fails
     # and there are problem with closing the file safely
     # so I decided not to webscrape with the file opened)
-    with open(FILENAME, 'r') as f:
+    with open(filename, 'r') as f:
         try: file_dict = json.load(f)
         except: file_dict = {"name": "Flights_data", "items": []}
 
     # Get flights data for each date
     for (dep_date, ret_date) in dates:
 
-        input_dates(dep_date, ret_date)
-        all_results = driver.find_elements(By.CLASS_NAME, 'JMc5Xc')
-
+        try:
+            input_dates(dep_date, ret_date)
+            all_results = driver.find_elements(By.CLASS_NAME, 'JMc5Xc')
+        except selenium.common.exceptions.NoSuchElementException as e:
+            print('\n' + '-' * 49)
+            print("Error encountered:\n\n", e)
+            print("Please re-run this app.")
+            print("If it doesn't help contact developer of this app")
+            print('-' * 49)
+            driver.close()
+            sys.exit()
+            
         for elem in all_results:
-
+            
             elem_dict, do_append = get_flight_data(elem, ret_date)
-
+                
             if do_append:
                 file_dict["items"].append(elem_dict)
+                read += 1
             else:
                 errors += 1
 
     driver.close()
     print('\n' + '-' * 31)
     print("Web Scraping: SUCCEEDED")
+    print(f"Read {read} flights data")
     print(f"Unable to read {errors} flights data")
     print('-' * 31)
 
@@ -304,7 +333,7 @@ if __name__ == "__main__":
     # because sometimes the selenium web driver fails
     # and there are problem with closing the file safely
     # so I decided not to webscrape with the file opened)
-    with open(FILENAME, 'w') as f:
+    with open(filename, 'w') as f:
         json.dump(file_dict, f, indent=4)
         print("Writing Data to File: SUCCEEDED")
         print('-' * 31)
